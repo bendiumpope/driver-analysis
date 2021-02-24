@@ -29,7 +29,6 @@ async function analysis() {
         return value;
       }
     })
-    // console.log(nonCashTrip)
     const noOfNonCashTrip= nonCashTrip.length;
   
     billedTotal = getTrip.reduce(((acc,value)=>{

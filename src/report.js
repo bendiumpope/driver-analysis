@@ -3,78 +3,112 @@ const { getTrips, getDriver, getVehicle } = require('api');
 /**
  * This function should return the data for drivers in the specified format
  *
+ * Question 4
+ *
  * @returns {any} Driver report data
  */
 async function driverReport() {
-  
-    // "totalAmountEarned": 11793.04,
-    // "totalCashAmount": 1715.16,
-    // "totalNonCashAmount": 10077.87
-    
-    let getTrip = await getTrips();
-    // console.log(getTrip);
-  
-    let driver=new Set(getTrip.driverID)
-    
-    function convertNum(numb){
-      let acc;
-      if(typeof numb ==="string"){
-        acc = Number((numb).replace(',',""));  
-      }else{
-        acc = numb;
-      }
-  
-      return acc;
+
+  const trips = await getTrips();
+  const drivers = Array.from(new Set(trips.reduce((acc, value) => {
+    acc.push(value.driverID);
+    return acc
+  }, [])))
+
+  const tripsArray = await tripsData(drivers, trips);
+  const driversArray = await driversData(drivers, trips);
+
+  return driversArray.map((driverDetail, index) => {
+    if(driverDetail){
+      return {...driverDetail, ...tripsArray[index]}
     }
-  
-    let allTrips = getTrip.reduce((acc, curr) => {
-      if(!acc[curr.driverID]) {
-        acc[curr.driverID] = {noOfTrips : 1, noOfCashTrips: 0, noOfNonCashTrips: 0, trips: [], totalCashAmount:0, totalnonCashAmount: 0};
-        curr.isCash ? acc[curr.driverID].noOfCashTrips = 1 : acc[curr.driverID].noOfNonCashTrips = 1;        
-        acc[curr.driverID].trips.push({user: curr.user.name, createdAt: curr.user.created});
-        acc[curr.driverID].totalAmountEarned = convertNum(curr.billedAmount);
-        if(curr.isCash){
-          acc[curr.driverID]["totalCashAmount"] = convertNum(curr.billedAmount);
-        }else{
-          acc[curr.driverID]["totalnonCashAmount"] = convertNum(curr.billedAmount);
-        } 
-      } else {
-        ++acc[curr.driverID].noOfTrips;
-        curr.isCash ? acc[curr.driverID].noOfCashTrips += 1 : acc[curr.driverID].noOfNonCashTrips += 1        
-        acc[curr.driverID].trips.push({user: curr.user.name, createdAt: curr.user.created})
-        acc[curr.driverID].totalAmountEarned += convertNum(curr.billedAmount)
-        if(curr.isCash){
-          acc[curr.driverID]["totalCashAmount"] += convertNum(curr.billedAmount); 
-        }else{
-          acc[curr.driverID]["totalnonCashAmount"] += convertNum(curr.billedAmount);
-        } 
-      
-      }
-      return acc;
-    }, {});
-    // console.log(allTrips)
-    let uniqDriverID= Object.keys(allTrips)
-    let noOfDrivers=[]
-    uniqDriverID.forEach((value)=>{
-     
-        noOfDrivers.push(getDriver(driver));
-        // console.log(noOfDrivers)
-      })
-      
-    const drivers = await Promise.all(noOfDrivers.map(async val => {
-        try{
-          return await val
-        }catch(e){
-          return e
+  });
+}
+
+async function driversData(drivers) {
+
+  let driversDetailsPromise = drivers.map((driver) => {
+    return getDriver(driver)
+      .then((data) => {
+        // const vehicleArray = data.vehicleID.map( async (vehicleID) => {
+        //   return await getVehicle(vehicleID);
+        // })
+        return {
+          fullName: data.name,
+          phone: data.phone,
+          noOfVehicles: data.vehicleID.length,
+          // vehicles: await vehicleArray
         }
-      } ))
-    
-    // console.log(drivers)
+      }).catch(() => 0);
+  })
   
+  return Promise.all(driversDetailsPromise).then()
+}
+
+
+// let noOfDriversWithMoreThanOneVehicle = await Promise.all(driversVehicle).then((data) => data.reduce((acc, val) => {
+//   return val > 1 ? acc += 1 : acc
+// }, 0))
+
+async function tripsData(drivers, trips) {
+
+  const driversTripsDetails = {}
+  drivers.map((value) => {
+    driversTripsDetails[value] = trips.filter((trip) => value == trip.driverID)
+    // console.log(driversTripsDetails);
+  })
+
+  driversObject = [];
+  drivers.map((driverID) => {
+    const driver = driversTripsDetails[driverID].reduce((acc, value) => {
+      acc.noOfTrips++;
+      const amount = parseFloat(`${value.billedAmount}`.replace(/,/g, ""));
+      if (value.isCash === true) {
+        acc.noOfCashTrips++;
+        acc.totalCashAmount += amount;
+      }
+      if (value.isCash === false) {
+        acc.noOfNonCashTrips++;
+        acc.totalNonCashAmount += amount
+      }
+      acc.totalAmountEarned += amount;
+      const trip = {};
+      trip.user = value.user.name;
+      trip.created = value.created;
+      trip.pickup = value.pickup.address;
+      trip.destination = value.destination.address;
+      trip.billed = billedTOInt(value.billedAmount);
+      trip.isCash = value.isCash;
+
+      acc.trips.push(trip);
+      return acc;
+    }, {
+      noOfTrips: 0,
+      noOfCashTrips: 0,
+      noOfNonCashTrips: 0,
+      totalAmountEarned: 0,
+      totalCashAmount: 0,
+      totalNonCashAmount: 0,
+      trips: [],
+    })
+    driver.totalAmountEarned = Math.floor(driver.totalAmountEarned * 100) / 100;
+    driver.totalCashAmount = Math.floor(driver.totalCashAmount * 100) / 100;
+    driver.totalNonCashAmount = Math.floor(driver.totalNonCashAmount * 100) / 100;
+    driversObject.push(driver);
+  })
+
+  return driversObject;
+}
+
+function billedTOInt(billed) {
   
-  
-  }
+  let newBilled = billed.toString().replace(",", "");
+
+  return newBilled * 1;
+}
 
 module.exports = driverReport;
 
 // https://github.com/bendiumpope/driver-analysis
+
+// console.log(driverReport());

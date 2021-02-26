@@ -6,6 +6,7 @@ const { getTrips, getDriver } = require('api');
  * @returns {any} Trip data analysis
  */
 
+ /* THE TIME COMPLEXITY IS: O(n) time */
 async function analysis() {
   
     let getTrip = await getTrips();
@@ -29,6 +30,7 @@ async function analysis() {
         return value;
       }
     })
+  
     const noOfNonCashTrip= nonCashTrip.length;
   
     billedTotal = getTrip.reduce(((acc,value)=>{

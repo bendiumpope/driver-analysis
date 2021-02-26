@@ -7,6 +7,9 @@ const { getTrips, getDriver, getVehicle } = require('api');
  *
  * @returns {any} Driver report data
  */
+
+ 
+/* THE TIME COMPLEXITY IS: O(n) time */
 async function driverReport() {
 
   const trips = await getTrips();
@@ -77,7 +80,7 @@ async function tripsData(drivers, trips) {
       trip.created = value.created;
       trip.pickup = value.pickup.address;
       trip.destination = value.destination.address;
-      trip.billed = billedTOInt(value.billedAmount);
+      trip.billed = billedToInt(value.billedAmount);
       trip.isCash = value.isCash;
 
       acc.trips.push(trip);
@@ -100,7 +103,7 @@ async function tripsData(drivers, trips) {
   return driversObject;
 }
 
-function billedTOInt(billed) {
+function billedToInt(billed) {
   
   let newBilled = billed.toString().replace(",", "");
 

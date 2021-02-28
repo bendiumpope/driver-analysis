@@ -33,14 +33,13 @@ async function driversData(drivers) {
   let driversDetailsPromise = drivers.map((driver) => {
     return getDriver(driver)
       .then((data) => {
-        // const vehicleArray = data.vehicleID.map( async (vehicleID) => {
-        //   return await getVehicle(vehicleID);
-        // })
+        // console.log(data.vehicleID.length)
         return {
           fullName: data.name,
           phone: data.phone,
           noOfVehicles: data.vehicleID.length,
           // vehicles: await vehicleArray
+          
         }
       }).catch(() => 0);
   })
@@ -49,23 +48,20 @@ async function driversData(drivers) {
 }
 
 
-// let noOfDriversWithMoreThanOneVehicle = await Promise.all(driversVehicle).then((data) => data.reduce((acc, val) => {
-//   return val > 1 ? acc += 1 : acc
-// }, 0))
 
 async function tripsData(drivers, trips) {
 
   const driversTripsDetails = {}
   drivers.map((value) => {
-    driversTripsDetails[value] = trips.filter((trip) => value == trip.driverID)
-    // console.log(driversTripsDetails);
-  })
+    driversTripsDetails[value] = trips.filter((trip) => value == trip.driverID);
+  });
 
   driversObject = [];
+
   drivers.map((driverID) => {
     const driver = driversTripsDetails[driverID].reduce((acc, value) => {
       acc.noOfTrips++;
-      const amount = parseFloat(`${value.billedAmount}`.replace(/,/g, ""));
+      const amount = billedToInt(value.billedAmount);
       if (value.isCash === true) {
         acc.noOfCashTrips++;
         acc.totalCashAmount += amount;
@@ -105,9 +101,9 @@ async function tripsData(drivers, trips) {
 
 function billedToInt(billed) {
   
-  let newBilled = billed.toString().replace(",", "");
+  let newBilled = parseFloat(billed.toString().replace(",", ""));
 
-  return newBilled * 1;
+  return newBilled;
 }
 
 module.exports = driverReport;
